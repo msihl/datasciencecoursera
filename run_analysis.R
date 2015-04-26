@@ -1,5 +1,5 @@
 # Coursera getdata-013 Getting and Cleaning Data Course Project, Matthias Ihl
-# The following script is designed to perform the steps listed in the codebook.md markdoen file on the UCI HAR Dataset downloaded from 
+# The following script is designed to perform the steps listed in the codebook.md markdown file on the UCI HAR Dataset downloaded from 
 # https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip 
 
 # 1) Merge the training and the test sets to create one data set.
