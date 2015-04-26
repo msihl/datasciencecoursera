@@ -4,7 +4,7 @@ Intro
 
 This repo contains my solution for the course project of the "Getting and Cleaning Data" part of the Data Science Specialization on Coursera.
 
-About the raw data
+Basic description of the data
 
 The features are unlabeled and are supplied in the X_test.txt. The activity labels are supplied in the y_test.txt file. The test subjects can be foun in the subject_test.txt file, and similarly for the training set.
 
