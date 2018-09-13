@@ -1,0 +1,109 @@
+---
+title: "PracticalMachineLearningProjectMI"
+author: "Matthias Ihl"
+date: "13/9/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+
+In this project, we study data coming from accelerometers on the belt, forearm, arm, and dumbell of 6 research participants. The training data includes the accelerometer data and a label describing the quality of the exercise the participants were executing. The test data misses the quality label and the goal of this project is to predict this label in the test set. I will describe step by step how to build the model, estimate the out-of sample error and make prediction.
+
+## Preparation of the data
+
+First, let us load the caret and other packets and read the data:
+```{r}
+library(caret)
+library(rpart)
+library(rattle)
+library(randomForest)
+training <- read.csv("~/Desktop/Coursera/pml-training.csv") 
+testing <- read.csv("~/Desktop/Coursera/pml-testing.csv")
+```
+In order to estimate out-of-sample error, let us further split the training set into a training and validation set:
+```{r}
+set.seed(23456)
+inTrain <- createDataPartition(y=training$classe, p=0.75, list=FALSE)
+training_train <- training[inTrain, ]
+training_valid <- training[-inTrain, ]
+```
+I will now apply a method I learned recently, namely removing variables with "near zero variance" which turn out to be generally not useful for predicting outcomes. Moreover, all irrelevant variables and those that are mostly NA will be eliminated as well.
+```{r}
+# irrelevant variables
+training_train <- training_train[, -(1:5)]
+training_valid <- training_valid[, -(1:5)]
+# mostly NA (in training set)
+mostlyNA <- sapply(training_train, function(x) mean(is.na(x))) > 0.8
+training_train <- training_train[, mostlyNA==FALSE]
+training_valid <- training_valid[, mostlyNA==FALSE]
+# near zero variance
+NZV <- nearZeroVar(training_train)
+training_train <- training_train[, -NZV]
+training_valid <- training_valid[, -NZV]
+summary(training_train)
+summary(training_valid)
+```
+
+## Building the model
+
+The first attempt will be to model the data with descision trees:
+```{r}
+set.seed(23456)
+modelFit_dt <- rpart(classe ~ ., data=training_train, method="class")
+fancyRpartPlot(modelFit_dt)
+```
+
+Let's predict the classe variable in the validation set:
+
+```{r}
+predict_dt <- predict(modelFit_dt, training_valid, type = "class")
+cm_dt <- confusionMatrix(predict_dt, training_valid$classe)
+cm_dt
+```
+
+Next, we will try to predict with random forests:
+
+```{r}
+set.seed(23456)
+modelFit_rf <- randomForest(classe ~ ., data=training_train)
+predict_rf <- predict(modelFit_rf, training_valid, type = "class")
+cm_rf <- confusionMatrix(predict_rf, training_valid$classe)
+cm_rf
+```
+
+Lastly, let us try boosting: Unfortunately, it took too long to evaluate this on my old laptop!
+Therefore, in light of the very high accuracy of random forests, I assume that random forests are the best method and will use that method below.
+
+```{r eval = FALSE}
+set.seed(23456)
+ModelFit_gbm <- train(classe ~ ., data=training_train, method = "gbm", verbose = FALSE)
+
+predict_gbm <- predict(ModelFit_gbm$finalModel, newdata=training_valid)
+cm_gbm <- confusionMatrix(predict_gbm, training_valid$classe)
+cm_gbm
+```
+
+## Prediction of the test results
+
+Random forest seems to be the most accurate method from the above list. The expected out-of-sample error is . Thus, we use random forests to predict the classe feature on the test set.
+
+```{r}
+predict_test <- predict(modelFit_rf, testing, type = "class")
+predict_test
+```
+
+
+```{r echo = FALSE}
+#if needed the results can be written to a file.
+pml_file = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)}}
+
+pml_file(predict_test)
+```
